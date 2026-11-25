@@ -1,3 +1,106 @@
+/**
+ * Correios — diagnóstico inicial de identidade institucional.
+ *
+ * IMPORTANTE:
+ * Este diagnóstico deve ser testado com a implantação configurada como:
+ *   Executar como: usuário que acessa o app (USER_ACCESSING)
+ *   Quem pode acessar: qualquer usuário do domínio (DOMAIN)
+ *
+ * Não passe o e-mail do usuário por parâmetros ou pelo navegador.
+ * A identidade é obtida exclusivamente no servidor via Session.
+ */
+
+const CORREIOS_DOMINIO_INSTITUCIONAL = 'mosteirodasantacruz.org.br';
+
+/**
+ * Página temporária de diagnóstico para validar a identidade institucional.
+ * Será substituída pela interface definitiva após os testes.
+ */
+function doGet() {
+  const ativo = Session.getActiveUser().getEmail() || '';
+  const efetivo = Session.getEffectiveUser().getEmail() || '';
+  const dominioValido = ativo.toLowerCase().endsWith(
+    '@' + CORREIOS_DOMINIO_INSTITUCIONAL
+  );
+
+  const estado = !ativo
+    ? 'IDENTIDADE NÃO DISPONÍVEL'
+    : dominioValido
+      ? 'IDENTIDADE INSTITUCIONAL IDENTIFICADA'
+      : 'ACESSO NEGADO';
+
+  const cor = dominioValido ? '#23633d' : '#a12b2b';
+
+  const html =
+    '<!doctype html><html lang="pt-BR"><head>' +
+    '<meta charset="utf-8">' +
+    '<meta name="viewport" content="width=device-width,initial-scale=1">' +
+    '<title>Correios · Diagnóstico</title>' +
+    '<style>' +
+    'body{font:16px system-ui,sans-serif;background:#f4f6f3;color:#24342a;' +
+    'margin:0;padding:32px;}' +
+    'main{max-width:620px;margin:8vh auto;background:white;padding:28px;' +
+    'border:1px solid #dfe7df;border-radius:14px;}' +
+    'h1{font-family:Georgia,serif;font-weight:400;}' +
+    '.estado{font-weight:700;color:' + cor + ';}' +
+    'dt{font-weight:700;margin-top:18px;}dd{margin:5px 0 0;overflow-wrap:anywhere;}' +
+    'p{line-height:1.6;color:#65736a;}' +
+    '</style></head><body><main>' +
+    '<h1>Correios</h1>' +
+    '<p>Teste de identificação da conta institucional.</p>' +
+    '<p class="estado">' + estado + '</p>' +
+    '<dl>' +
+    '<dt>Usuário ativo</dt><dd>' + escaparHtml_(ativo || '(vazio)') + '</dd>' +
+    '<dt>Usuário efetivo</dt><dd>' + escaparHtml_(efetivo || '(vazio)') + '</dd>' +
+    '<dt>Domínio exigido</dt><dd>' +
+    escaparHtml_(CORREIOS_DOMINIO_INSTITUCIONAL) + '</dd>' +
+    '</dl>' +
+    '<p>Esta página é apenas um teste. Nenhuma caixa de e-mail foi consultada.</p>' +
+    '</main></body></html>';
+
+  return HtmlService.createHtmlOutput(html)
+    .setTitle('Correios · Diagnóstico de identidade')
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+}
+
+/**
+ * Diagnóstico para execução manual no editor do Apps Script.
+ * Não aceita identidade enviada pelo cliente.
+ */
+function diagnosticarIdentidadeInstitucional() {
+  const ativo = Session.getActiveUser().getEmail() || '';
+  const efetivo = Session.getEffectiveUser().getEmail() || '';
+
+  const resultado = {
+    usuarioAtivo: ativo || null,
+    usuarioEfetivo: efetivo || null,
+    dominioInstitucionalValido: Boolean(
+      ativo.toLowerCase().endsWith(
+        '@' + CORREIOS_DOMINIO_INSTITUCIONAL
+      )
+    ),
+    dominioExigido: CORREIOS_DOMINIO_INSTITUCIONAL
+  };
+
+  Logger.log(JSON.stringify(resultado, null, 2));
+  return resultado;
+}
+
+/**
+ * Escapa valores exibidos na página de diagnóstico.
+ */
+function escaparHtml_(valor) {
+  return String(valor).replace(/[&<>"']/g, function(caractere) {
+    return {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[caractere];
+  });
+}
+
 const CORREIOS_CONFIG = {
   MAX_CONTAS: 3,
   PROVEDOR: 'Google',
