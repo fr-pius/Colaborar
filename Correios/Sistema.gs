@@ -13,10 +13,31 @@
 const CORREIOS_DOMINIO_INSTITUCIONAL = 'mosteirodasantacruz.org.br';
 
 /**
+ * Retorna a identidade institucional autenticada pelo Google.
+ * Nunca aceita e-mail recebido do navegador ou de parâmetros da URL.
+ */
+function exigirUsuarioInstitucional_() {
+  const email = String(Session.getActiveUser().getEmail() || '')
+    .trim()
+    .toLowerCase();
+
+  const dominio = '@' + CORREIOS_DOMINIO_INSTITUCIONAL.toLowerCase();
+
+  if (!email || !email.endsWith(dominio)) {
+    throw new Error(
+      'Acesso negado. É necessário entrar com uma conta institucional autorizada.'
+    );
+  }
+
+  return email;
+}
+
+/**
  * Página temporária de diagnóstico para validar a identidade institucional.
  * Será substituída pela interface definitiva após os testes.
  */
 function doGet() {
+  exigirUsuarioInstitucional_();
   const ativo = Session.getActiveUser().getEmail() || '';
   const efetivo = Session.getEffectiveUser().getEmail() || '';
   const dominioValido = ativo.toLowerCase().endsWith(
@@ -68,6 +89,7 @@ function doGet() {
  * Não aceita identidade enviada pelo cliente.
  */
 function diagnosticarIdentidadeInstitucional() {
+  exigirUsuarioInstitucional_();
   const ativo = Session.getActiveUser().getEmail() || '';
   const efetivo = Session.getEffectiveUser().getEmail() || '';
 
@@ -114,6 +136,7 @@ const CORREIOS_CONFIG = {
  * Retorna a configuração básica do Correios.
  */
 function obterConfiguracao() {
+  exigirUsuarioInstitucional_();
   return {
     nome: 'Correios',
     maxContas: CORREIOS_CONFIG.MAX_CONTAS,
@@ -126,6 +149,7 @@ function obterConfiguracao() {
  * Verifica se o projeto está preparado.
  */
 function verificarSistema() {
+  exigirUsuarioInstitucional_();
   const propriedades = PropertiesService.getScriptProperties();
 
   const clientId = propriedades.getProperty('GOOGLE_OAUTH_CLIENT_ID');
@@ -146,6 +170,7 @@ function verificarSistema() {
  * Cria o serviço OAuth de uma das três contas.
  */
 function obterServicoGmail_(numeroConta) {
+  exigirUsuarioInstitucional_();
   validarNumeroConta_(numeroConta);
 
   const propriedades = PropertiesService.getScriptProperties();
